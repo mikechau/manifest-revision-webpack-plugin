@@ -21,6 +21,7 @@ var ManifestRevisionPlugin = function (output, options) {
     this.options.rootAssetPath = options.rootAssetPath || './';
     this.options.ignorePaths = options.ignorePaths || [];
     this.options.format = options.format || 'general';
+    this.options.customStatsConfig = options.customStatsConfig || {};
 };
 
 /**
@@ -143,17 +144,25 @@ ManifestRevisionPlugin.prototype.apply = function (compiler) {
     self.walkAndPrefetchAssets(compiler);
 
     compiler.plugin('done', function (stats) {
+        var customStatsConfig = self.options.customStatsConfig;
+        var customStats = {};
+
+        Object.keys(customStatsConfig).forEach(function(configKey) {
+            var config = customStatsConfig[configKey];
+            customStats[config.name] = stats.compilation[config.key];
+        });
+
         var data = stats.toJson(options);
         var parsedAssets = self.parsedAssets(data.modules);
         var outputData = null;
 
         if (typeof self.options.format === 'string' ||
             self.options.format instanceof String) {
-            var format = new Format(data, parsedAssets);
+            var format = new Format(data, parsedAssets, customStats);
             outputData = format[self.options.format]();
         }
         else {
-            outputData = self.options.format(data, parsedAssets);
+            outputData = self.options.format(data, parsedAssets, customStats);
         }
 
         if (typeof outputData === 'object') {

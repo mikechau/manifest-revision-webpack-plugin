@@ -4,9 +4,10 @@
 * @param {object} parsedAssets - List of assets that have already been parsed.
 * @returns {object}
 */
-var Format = function (data, parsedAssets) {
+var Format = function (data, parsedAssets, customStats) {
     this.data = data;
     this.assets = parsedAssets;
+    this.customStats = customStats || {};
 };
 
 /**
@@ -70,12 +71,19 @@ Format.prototype.general = function () {
 */
 Format.prototype.rails = function () {
     var output = this.general();
+    var customStats = this.customStats;
+
     output.files = {};
-    
+
     for (var asset in this.assets) {
-        output.files[this.assets[asset]] = {
-            'logical_path': asset
+        var hashedName = this.assets[asset];
+        var file = output.files[hashedName] = {
+            'logical_path': asset,
         }
+
+        Object.keys(customStats).forEach(function(statKey) {
+            file[statKey] = customStats[statKey][hashedName];
+        });
     }
 
     return output;
